@@ -7,12 +7,45 @@ unsigned int W_WIDTH;
 unsigned int W_HEIGHT;
 unsigned int* W_BUFFER;
 
-#define PIXELCOLOR(RED,GREEN,BLUE) (((RED<<16)&0xFF0000)|((GREEN<<8)&0x00FF00)|((BLUE)&0x0000FF))
-#define XYTOBUFFEROFFSET(X,Y) X+((W_HEIGHT-Y)*W_HEIGHT)
-#define XYTOSCREENOFFSET(X,Y,PITCH) X+((W_HEIGHT-Y)*(PITCH/4))
+#define PIXELCOLOR(RED,GREEN,BLUE) (((RED<<16)&0xFF0000)|((GREEN<<8)&0x00FF00)|((BLUE)&0x0000FF))&0x00FFFFFF;
+#define XYTOBUFFEROFFSET(X,Y) X+(((W_HEIGHT-1)-Y)*W_HEIGHT)
+#define XYTOSCREENOFFSET(X,Y,PITCH) X+(((W_HEIGHT-1)-Y)*(PITCH/4))
 
 unsigned int charX;
 unsigned int charY;
+
+class SpaceObject {
+protected:
+  unsigned long ticks;
+public:
+  double xPosition;
+  double yPosition;
+  
+  double xAcceleration;
+  double yAcceleration;
+
+  // --- //
+
+  SpaceObject(double x, double y);
+  void Tick();
+};
+
+SpaceObject::SpaceObject(double x, double y) {
+  this->ticks = 0;
+  this->xPosition = x;
+  this->yPosition = y;
+  this->xAcceleration = 0;
+  this->yAcceleration = 0;
+}
+
+void SpaceObject::Tick() {
+  this->xPosition += this->xAcceleration;
+  this->yPosition += this->yAcceleration;
+  this->ticks++;
+}
+
+#define NUMSPACEOBJECTS 200
+SpaceObject* SPACEOBJECTS[200];
 
 void render()
 {   
@@ -26,21 +59,25 @@ void render()
 
   // Declare a couple of variables
   int i, j, yofs, ofs;
-
-  memset(W_BUFFER,0,sizeof(unsigned int)*W_WIDTH*W_HEIGHT);
   
-  W_BUFFER[XYTOBUFFEROFFSET(charX,charY)] = PIXELCOLOR(0x40,0xFF,0xA0);
+  memset(W_BUFFER,0,sizeof(unsigned int)*W_WIDTH*W_HEIGHT);
 
+  for(int i = 0; i < NUMSPACEOBJECTS; i++) {
+    unsigned int bufferOffset = XYTOBUFFEROFFSET(((unsigned int)SPACEOBJECTS[i]->xPosition),((unsigned int)SPACEOBJECTS[i]->yPosition));
+    W_BUFFER[bufferOffset] = PIXELCOLOR(0xFF,0xFF,0xFF);
+    SPACEOBJECTS[i]->Tick();
+  }
+  
   for(int x = 0; x < W_WIDTH; x++)
     for(int y = 0; y < W_HEIGHT; y++)
       ((unsigned int*)screen->pixels)[XYTOSCREENOFFSET(x,y,screen->pitch)] = W_BUFFER[XYTOBUFFEROFFSET(x,y)];
-
+  
   // Unlock if needed
   if (SDL_MUSTLOCK(screen)) 
     SDL_UnlockSurface(screen);
 
   // Tell SDL to update the whole screen
-  SDL_UpdateRect(screen, 0, 0, W_WIDTH, W_HEIGHT);    
+  SDL_UpdateRect(screen, 0, 0, W_WIDTH, W_HEIGHT);
 }
 
 void shutDown() {
@@ -63,6 +100,13 @@ int main(int argc, char *argv[])
 
   W_BUFFER = (unsigned int*)malloc(sizeof(unsigned int)*W_WIDTH*W_HEIGHT);
   memset(W_BUFFER,0,sizeof(unsigned int)*W_WIDTH*W_HEIGHT);
+
+  for(int i = 0; i < NUMSPACEOBJECTS; i++) {
+    SPACEOBJECTS[i] = new SpaceObject(W_WIDTH/2, W_HEIGHT/2);
+    SPACEOBJECTS[i]->xAcceleration = ((double)(rand()%10)) * 0.001;
+    SPACEOBJECTS[i]->yAcceleration = ((double)(rand()%10)) * 0.001;
+  }
+
 
   // Initialize SDL's subsystems - in this case, only video.
   if ( SDL_Init(SDL_INIT_VIDEO) < 0 ) 
