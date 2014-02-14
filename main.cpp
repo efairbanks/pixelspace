@@ -60,7 +60,9 @@ void render()
   // Declare a couple of variables
   int i, j, yofs, ofs;
   
-  memset(W_BUFFER,0,sizeof(unsigned int)*W_WIDTH*W_HEIGHT);
+  //memset(W_BUFFER,0,sizeof(unsigned int)*W_WIDTH*W_HEIGHT);
+
+  for(int i = 0; i < W_WIDTH*W_HEIGHT; i++) W_BUFFER[i] = W_BUFFER[i]*95/100;
 
   for(int i = 0; i < NUMSPACEOBJECTS; i++) {
     unsigned int bufferOffset = XYTOBUFFEROFFSET(((unsigned int)SPACEOBJECTS[i]->xPosition),((unsigned int)SPACEOBJECTS[i]->yPosition));
@@ -103,8 +105,8 @@ int main(int argc, char *argv[])
 
   for(int i = 0; i < NUMSPACEOBJECTS; i++) {
     SPACEOBJECTS[i] = new SpaceObject(W_WIDTH/2, W_HEIGHT/2);
-    SPACEOBJECTS[i]->xAcceleration = ((double)(rand()%10)) * 0.001;
-    SPACEOBJECTS[i]->yAcceleration = ((double)(rand()%10)) * 0.001;
+    SPACEOBJECTS[i]->xAcceleration = ((double)(rand()%100)) / 1000.0 * (rand()%2==0 ? -1 : 1);
+    SPACEOBJECTS[i]->yAcceleration = ((double)(rand()%100)) / 1000.0 * (rand()%2==0 ? -1 : 1);
   }
 
 
