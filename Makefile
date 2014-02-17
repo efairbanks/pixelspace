@@ -1,4 +1,4 @@
 pixelspace:
-	g++ main.cpp -o pixelspace -lSDL
+	g++ main.cpp engine.cpp -o pixelspace -lSDL
 clean:
 	rm *~ *# pixelspace
