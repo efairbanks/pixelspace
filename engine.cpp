@@ -4,6 +4,7 @@
 
 PixelSpace* PixelSpace::_engine = NULL;
 bool PixelSpace::running = false;
+Uint32 PixelSpace::ticks = 0;
 
 PixelSpace* PixelSpace::Engine() {
   return _engine;
@@ -33,6 +34,13 @@ PixelSpace* PixelSpace::Engine(unsigned int screenWidth,
     SDL_AddTimer(1000/_engine->_frameRate,
 		 PixelSpace::_FrameCallback,
 		 NULL);
+    // --- TEST --- //
+    for(int i = 0; i < 100; i++)
+      _engine->spaceObjects[i] = new SpaceObject(0,
+						 0,
+						 ((rand()%100)-50)*0.001,
+						 ((rand()%100)-50)*0.001);
+    // --- TEST --- //
     running = true;
   }
     return _engine;
@@ -43,6 +51,8 @@ bool PixelSpace::ShutDown() {
 }
 
 void PixelSpace::FillScreen(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
+  //SDL_FillRect(_
+  /*
   for(int ix = 0; ix < _screenWidth; ix++)
     for(int iy = 0; iy < _screenHeight; iy++) {
       unsigned int offset = ix;
@@ -50,18 +60,29 @@ void PixelSpace::FillScreen(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
       ((unsigned int*)_screen->pixels)[offset] = 
 	SDL_MapRGBA(_screen->format,r,g,b,a);
     }
+  */
+}
+
+Uint32 PixelSpace::Tick() {
+  // --- TEST --- //
+  for(int i = 0; i < 100; i++)
+    this->spaceObjects[i]->Tick();
+  // --- TEST --- //
+  // --- //
+  this->ticks++;
+  return this->ticks;
 }
 
 void PixelSpace::DrawPixel(double x, double y,
 			   Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-  unsigned int ix =(unsigned int)((x*(_screenWidth/2))+(_screenWidth/2));
-  unsigned int iy =(unsigned int)((y*(_screenHeight/2))+(_screenHeight/2));
-  while(ix >= _screenWidth) ix -= _screenWidth;
-  while(iy >= _screenHeight) iy -= _screenHeight;
-  unsigned int offset = ix;
-  offset += ((_screenHeight-1)-iy)*(_screen->pitch/4);
-  ((unsigned int*)_screen->pixels)[offset] = SDL_MapRGBA(_screen->format,
-							 r,g,b,a);
+    unsigned int ix =(unsigned int)x + (_screenWidth/2);
+    unsigned int iy =(unsigned int)y + (_screenHeight/2);
+    if(ix>0 && iy>0 && ix<_screenWidth && iy<_screenHeight){
+      unsigned int offset = ix;
+      offset += ((_screenHeight-1)-iy)*(_screen->pitch/4);
+      ((unsigned int*)_screen->pixels)[offset] = SDL_MapRGBA(_screen->format,
+							     r,g,b,a);
+    }
 }
 
 Uint32 PixelSpace::_FrameCallback(Uint32 interval,
@@ -69,12 +90,18 @@ Uint32 PixelSpace::_FrameCallback(Uint32 interval,
   if (SDL_MUSTLOCK(_engine->_screen)) 
     if (SDL_LockSurface(_engine->_screen) < 0) 
       return 0;
-  int tick = SDL_GetTicks();
+  Uint32 tick = SDL_GetTicks();
+
+  while(_engine->ticks < tick) _engine->Tick();
 
   // --- //
   
-  _engine->FillScreen(0,0,0,0);
-  _engine->DrawPixel(0+(tick/(1000.0*60.0)),0,0xff,0xff,0xff,0xff);
+  //_engine->FillScreen(0,0,0,0);
+  
+  // --- TEST --- //
+  for(int i = 0; i < 100; i++)
+    _engine->spaceObjects[i]->Render();
+  // --- TEST --- //
 
   // --- //
 
@@ -93,18 +120,36 @@ Uint32 PixelSpace::_FrameCallback(Uint32 interval,
     switch(event.type) {
     case SDL_KEYDOWN:
     case SDL_KEYUP:
-      if (event.key.keysym.sym == SDLK_ESCAPE)
+      if (event.key.keysym.sym == SDLK_ESCAPE) {
 	running = false;
+	return 0;
+      }
       break;
       //case SDL_QUIT:
     }
   }
   
   // --- //
-  
-  SDL_AddTimer(1000/_engine->_frameRate,
-	       PixelSpace::_FrameCallback,
-	       NULL);
 
   return 1000/_engine->_frameRate;
+}
+
+SpaceObject::SpaceObject(double x, double y, double xAccel, double yAccel) {
+  this->x = x;
+  this->y = y;
+  this->xAccel = xAccel;
+  this->yAccel = yAccel;
+  this->ticks = 0;
+}
+
+Uint32 SpaceObject::Tick() {
+  x += xAccel;
+  y += yAccel;
+
+  ticks++;
+  return ticks;
+}
+
+void SpaceObject::Render() {
+  PixelSpace::Engine()->DrawPixel(x,y,0xff,0xff,0xff,0xff);
 }

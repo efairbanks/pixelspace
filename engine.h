@@ -6,18 +6,35 @@
 #include <stdbool.h>
 #include "SDL/SDL.h"
 
+class SpaceObject {
+ public:
+  double x;
+  double y;
+  double xAccel;
+  double yAccel;
+  Uint32 ticks;
+
+  SpaceObject(double x, double y, double xAccel, double yAccel);
+  Uint32 Tick();
+  void Render();
+};
+
 class PixelSpace {
  public:
   static bool running;
+  static Uint32 ticks;
+  SpaceObject* spaceObjects[100];
+  // --- //
   static PixelSpace* Engine();
   static PixelSpace* Engine(unsigned int screenWidth,
 			    unsigned int screenHeight,
 			    unsigned int frameRate);
-  bool ShutDown();
- private:
   void DrawPixel(double x, double y,
 		 Uint8 r, Uint8 g, Uint8 b, Uint8 a);
   void FillScreen(Uint8 r, Uint8 g, Uint8 b, Uint8 a);
+  Uint32 Tick();
+  bool ShutDown();
+ private:
   // --- //
   static PixelSpace* _engine;
   // --- //
