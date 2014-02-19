@@ -35,11 +35,12 @@ PixelSpace* PixelSpace::Engine(unsigned int screenWidth,
 		 PixelSpace::_FrameCallback,
 		 NULL);
     // --- TEST --- //
-    for(int i = 0; i < 100; i++)
-      _engine->spaceObjects[i] = new SpaceObject(0,
-						 0,
-						 ((rand()%100)-50)*0.001,
-						 ((rand()%100)-50)*0.001);
+    for(int i = 0; i < 100; i++) {
+      _engine->spaceObjects.push_front(new SpaceObject(0,
+						       0,
+						       ((rand()%100)-50)*0.001,
+						       ((rand()%100)-50)*0.001));
+    }
     // --- TEST --- //
     running = true;
   }
@@ -51,22 +52,15 @@ bool PixelSpace::ShutDown() {
 }
 
 void PixelSpace::FillScreen(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-  //SDL_FillRect(_
-  /*
-  for(int ix = 0; ix < _screenWidth; ix++)
-    for(int iy = 0; iy < _screenHeight; iy++) {
-      unsigned int offset = ix;
-      offset += ((_screenHeight-1)-iy)*(_screen->pitch/4);
-      ((unsigned int*)_screen->pixels)[offset] = 
-	SDL_MapRGBA(_screen->format,r,g,b,a);
-    }
-  */
+  SDL_FillRect(_screen, NULL, SDL_MapRGBA(_screen->format,r,g,b,a));
 }
 
 Uint32 PixelSpace::Tick() {
   // --- TEST --- //
-  for(int i = 0; i < 100; i++)
-    this->spaceObjects[i]->Tick();
+  for(std::list<SpaceObject*>::const_iterator i = _engine->spaceObjects.begin();
+      i != _engine->spaceObjects.end();
+      ++i) (*i)->Tick();
+
   // --- TEST --- //
   // --- //
   this->ticks++;
@@ -96,11 +90,14 @@ Uint32 PixelSpace::_FrameCallback(Uint32 interval,
 
   // --- //
   
-  //_engine->FillScreen(0,0,0,0);
+  _engine->FillScreen(0,0,0,0);
   
   // --- TEST --- //
-  for(int i = 0; i < 100; i++)
-    _engine->spaceObjects[i]->Render();
+  //for(int i = 0; i < 100; i++)
+  //_engine->spaceObjects[i]->Render();
+  for(std::list<SpaceObject*>::const_iterator i = _engine->spaceObjects.begin();
+      i != _engine->spaceObjects.end();
+      ++i) (*i)->Render();
   // --- TEST --- //
 
   // --- //

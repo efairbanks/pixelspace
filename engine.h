@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <list>
 #include "SDL/SDL.h"
 
 class SpaceObject {
@@ -23,7 +24,7 @@ class PixelSpace {
  public:
   static bool running;
   static Uint32 ticks;
-  SpaceObject* spaceObjects[100];
+  std::list<SpaceObject*> spaceObjects;
   // --- //
   static PixelSpace* Engine();
   static PixelSpace* Engine(unsigned int screenWidth,
