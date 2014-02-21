@@ -6,6 +6,32 @@ PixelSpace* PixelSpace::_engine = NULL;
 bool PixelSpace::running = false;
 Uint32 PixelSpace::ticks = 0;
 
+Player::Player(SDLKey rotateLeft,
+	       SDLKey rotateRight,
+	       SDLKey boost,
+	       SDLKey fire) {
+  this->rotateLeft = rotateLeft;
+  this->rotateRight = rotateRight;
+  this->boost = boost;
+  this->fire = fire;
+  this->angle = 0;
+  this->magnitude = 0;
+  this->ship = new SpaceObject(0,0,0,0);
+  PixelSpace::_engine->spaceObjects.push_front(this->ship);
+}
+
+Uint32 Player::Tick() {
+  ship->xAccel += cos(angle*2*M_PI)*magnitude;
+  ship->yAccel += sin(angle*2*M_PI)*magnitude;
+}
+
+void Player::SetInput(SDLKey key, bool keyDown) {
+  if(key==rotateLeft && keyDown)  angle -= M_PI*2.0/8;
+  if(key==rotateRight && keyDown) angle += M_PI*2.0/8;
+  if(key==boost && keyDown) magnitude = 0.0001;
+  if(key==boost && !keyDown) magnitude = 0;
+}
+
 PixelSpace* PixelSpace::Engine() {
   return _engine;
 }
@@ -18,29 +44,31 @@ PixelSpace* PixelSpace::Engine(unsigned int screenWidth,
     _engine->_screenWidth = screenWidth;
     _engine->_screenHeight = screenHeight;
     _engine->_frameRate = frameRate;
-    printf("VARS\n");
     if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)) {
       ERROR("SDL_Init failure. ");}
-    printf("INIT\n");
     atexit(SDL_Quit);
-    printf("SDLQUIT\n");
     _engine->_screen = SDL_SetVideoMode(_engine->_screenWidth,
 					_engine->_screenHeight,
 					32,
 					SDL_SWSURFACE);
-    printf("SCREEN\n");
     if(_engine->_screen==NULL) {
       ERROR("_screen init failure.");}
     SDL_AddTimer(1000/_engine->_frameRate,
 		 PixelSpace::_FrameCallback,
 		 NULL);
     // --- TEST --- //
-    for(int i = 0; i < 100; i++) {
+    _engine->players.push_front(new Player(SDLK_LEFT,
+					   SDLK_RIGHT,
+					   SDLK_UP,
+					   SDLK_DOWN));
+    /*
+    for(int i = 0; i < 1000; i++) {
       _engine->spaceObjects.push_front(new SpaceObject(0,
 						       0,
 						       ((rand()%100)-50)*0.001,
 						       ((rand()%100)-50)*0.001));
     }
+    */
     // --- TEST --- //
     running = true;
   }
@@ -56,12 +84,32 @@ void PixelSpace::FillScreen(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 }
 
 Uint32 PixelSpace::Tick() {
-  // --- TEST --- //
+  SDL_Event event;
+  while(SDL_PollEvent(&event)) {
+    switch(event.type) {
+    case SDL_KEYDOWN:
+      for(std::list<Player*>::const_iterator i = _engine->players.begin();
+	  i != _engine->players.end();
+	  ++i) (*i)->SetInput(event.key.keysym.sym, true);
+      break;
+    case SDL_KEYUP:
+      for(std::list<Player*>::const_iterator i = _engine->players.begin();
+	  i != _engine->players.end();
+	  ++i) (*i)->SetInput(event.key.keysym.sym, false);
+      if (event.key.keysym.sym == SDLK_ESCAPE) {
+	running = false;
+	return 0;
+      }
+      break;
+      //case SDL_QUIT:
+    }
+  }
+  for(std::list<Player*>::const_iterator i = _engine->players.begin();
+      i != _engine->players.end();
+      ++i) (*i)->Tick();
   for(std::list<SpaceObject*>::const_iterator i = _engine->spaceObjects.begin();
       i != _engine->spaceObjects.end();
       ++i) (*i)->Tick();
-
-  // --- TEST --- //
   // --- //
   this->ticks++;
   return this->ticks;
@@ -112,19 +160,7 @@ Uint32 PixelSpace::_FrameCallback(Uint32 interval,
   
   // --- //
 
-  SDL_Event event;
-  while(SDL_PollEvent(&event)) {
-    switch(event.type) {
-    case SDL_KEYDOWN:
-    case SDL_KEYUP:
-      if (event.key.keysym.sym == SDLK_ESCAPE) {
-	running = false;
-	return 0;
-      }
-      break;
-      //case SDL_QUIT:
-    }
-  }
+  
   
   // --- //
 

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 #include <list>
 #include "SDL/SDL.h"
 
@@ -20,11 +21,32 @@ class SpaceObject {
   void Render();
 };
 
+class Player {
+ public:
+  Player(SDLKey rotateLeft,
+	 SDLKey rotateRight,
+	 SDLKey boost,
+	 SDLKey fire);
+  Uint32 Tick();
+  void SetInput(SDLKey key, bool keyDown);
+  // -- //
+  SDLKey rotateLeft;
+  SDLKey rotateRight;
+  SDLKey boost;
+  SDLKey fire;
+  // -- //
+  double angle;
+  double magnitude;
+  // -- //
+  SpaceObject* ship;
+};
+
 class PixelSpace {
  public:
   static bool running;
   static Uint32 ticks;
   std::list<SpaceObject*> spaceObjects;
+  std::list<Player*> players;
   // --- //
   static PixelSpace* Engine();
   static PixelSpace* Engine(unsigned int screenWidth,
@@ -35,10 +57,9 @@ class PixelSpace {
   void FillScreen(Uint8 r, Uint8 g, Uint8 b, Uint8 a);
   Uint32 Tick();
   bool ShutDown();
- private:
   // --- //
   static PixelSpace* _engine;
-  // --- //
+ private:
   SDL_Surface* _screen;
   unsigned int _screenWidth;
   unsigned int _screenHeight;
