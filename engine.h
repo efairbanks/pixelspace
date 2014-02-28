@@ -54,12 +54,13 @@ class PixelSpace {
 			    unsigned int frameRate);
   void DrawPixel(double x, double y,
 		 Uint8 r, Uint8 g, Uint8 b, Uint8 a);
+  void DrawSurface(double x, double y,
+		   SDL_Surface* surface);
   void FillScreen(Uint8 r, Uint8 g, Uint8 b, Uint8 a);
   Uint32 Tick();
   bool ShutDown();
   // --- //
   static PixelSpace* _engine;
- private:
   SDL_Surface* _screen;
   unsigned int _screenWidth;
   unsigned int _screenHeight;

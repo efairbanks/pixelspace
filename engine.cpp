@@ -6,6 +6,10 @@ PixelSpace* PixelSpace::_engine = NULL;
 bool PixelSpace::running = false;
 Uint32 PixelSpace::ticks = 0;
 
+// --- test --- //
+SDL_Surface* SHIP_SURFACE;
+// ------------ //
+
 Player::Player(SDLKey rotateLeft,
 	       SDLKey rotateRight,
 	       SDLKey boost,
@@ -57,6 +61,16 @@ PixelSpace* PixelSpace::Engine(unsigned int screenWidth,
 		 PixelSpace::_FrameCallback,
 		 NULL);
     // --- TEST --- //
+    SHIP_SURFACE = SDL_LoadBMP("./ship.bmp");
+    if(SHIP_SURFACE!=NULL) {
+      printf("LOADED SHIP IMAGE!\n");
+    } else {
+      printf("LOADING SHIP IMAGE FAILED!\n");
+    }
+    SDL_ConvertSurface(SHIP_SURFACE,
+		       _engine->_screen->format,
+		       0);
+
     _engine->players.push_front(new Player(SDLK_LEFT,
 					   SDLK_RIGHT,
 					   SDLK_UP,
@@ -117,14 +131,29 @@ Uint32 PixelSpace::Tick() {
 
 void PixelSpace::DrawPixel(double x, double y,
 			   Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-    unsigned int ix =(unsigned int)x + (_screenWidth/2);
-    unsigned int iy =(unsigned int)y + (_screenHeight/2);
-    if(ix>0 && iy>0 && ix<_screenWidth && iy<_screenHeight){
+    unsigned int ix =(int)x + (_screenWidth/2);
+    unsigned int iy =(int)y + (_screenHeight/2);
+    if(ix>=0 && iy>=0 && ix<_screenWidth && iy<_screenHeight){
       unsigned int offset = ix;
       offset += ((_screenHeight-1)-iy)*(_screen->pitch/4);
       ((unsigned int*)_screen->pixels)[offset] = SDL_MapRGBA(_screen->format,
 							     r,g,b,a);
     }
+}
+
+void PixelSpace::DrawSurface(double x, double y, SDL_Surface* surface) {
+  for(int i = 0; i < surface->w; i++) {
+    for(int j = 0; j < surface->h; j++) {
+      int surfaceOffset=i+(j*surface->pitch/4);
+      SDL_Color color = ((SDL_Color*)surface->pixels)[surfaceOffset];
+      _engine->DrawPixel(x+i-(surface->w/2),
+			 y+j-(surface->h/2),
+			 color.r,
+			 color.g,
+			 color.b,
+			 0xff);
+    }
+  }
 }
 
 Uint32 PixelSpace::_FrameCallback(Uint32 interval,
@@ -184,5 +213,5 @@ Uint32 SpaceObject::Tick() {
 }
 
 void SpaceObject::Render() {
-  PixelSpace::Engine()->DrawPixel(x,y,0xff,0xff,0xff,0xff);
+  PixelSpace::Engine()->DrawSurface(x,y,SHIP_SURFACE);
 }
