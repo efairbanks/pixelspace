@@ -61,7 +61,7 @@ PixelSpace* PixelSpace::Engine(unsigned int screenWidth,
 		 PixelSpace::_FrameCallback,
 		 NULL);
     // --- TEST --- //
-    SHIP_SURFACE = SDL_LoadBMP("./ship.bmp");
+    SHIP_SURFACE = SDL_LoadBMP("./cacheblasters.bmp");
     if(SHIP_SURFACE!=NULL) {
       printf("LOADED SHIP IMAGE!\n");
     } else {
