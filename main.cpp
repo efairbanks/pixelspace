@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "SDL/SDL.h"
-#include "engine.h"
+#include "engine.hpp"
 
 /* PIXELSPACE: High Concept
  * 

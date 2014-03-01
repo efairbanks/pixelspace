@@ -1,4 +1,4 @@
-#include "engine.h"
+#include "engine.hpp"
 
 #define ERROR(ERRORSTRING) printf(ERRORSTRING"\n"); exit(1);
 
@@ -8,6 +8,7 @@ Uint32 PixelSpace::ticks = 0;
 
 // --- test --- //
 SDL_Surface* SHIP_SURFACE;
+SDL_Surface* LOGO_SURFACE;
 // ------------ //
 
 Player::Player(SDLKey rotateLeft,
@@ -61,7 +62,8 @@ PixelSpace* PixelSpace::Engine(unsigned int screenWidth,
 		 PixelSpace::_FrameCallback,
 		 NULL);
     // --- TEST --- //
-    SHIP_SURFACE = SDL_LoadBMP("./cacheblasters.bmp");
+    SHIP_SURFACE = SDL_LoadBMP("./ship.bmp");
+    LOGO_SURFACE = SDL_LoadBMP("./cacheblasters.bmp");
     if(SHIP_SURFACE!=NULL) {
       printf("LOADED SHIP IMAGE!\n");
     } else {
@@ -214,4 +216,24 @@ Uint32 SpaceObject::Tick() {
 
 void SpaceObject::Render() {
   PixelSpace::Engine()->DrawSurface(x,y,SHIP_SURFACE);
+}
+
+VolatilePixel::VolatilePixel(double x, double y,
+		double xAccel, double yAccel,
+		Uint8 r, Uint8 g, Uint8 b) : SpaceObject(x,
+							 y,
+							 xAccel,
+							 yAccel) {
+  this->r = r;
+  this->g = g;
+  this->b = b;
+}
+
+void VolatilePixel::Render() {
+  PixelSpace::Engine()->DrawPixel(x,y,r,g,b,0xFF);
+}
+
+void VolatilePixel::Tick() {
+  SpaceObject::Tick();
+  
 }
