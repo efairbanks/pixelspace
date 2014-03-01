@@ -21,8 +21,7 @@ Player::Player(SDLKey rotateLeft,
   this->fire = fire;
   this->angle = 0;
   this->magnitude = 0;
-  this->ship = new SpaceObject(0,0,0,0);
-  PixelSpace::_engine->spaceObjects.push_front(this->ship);
+  this->ship = new SpaceObject(0,0.0-(PixelSpace::Engine()->_screenHeight/3.0),0,0);
 }
 
 Uint32 Player::Tick() {
@@ -64,27 +63,30 @@ PixelSpace* PixelSpace::Engine(unsigned int screenWidth,
     // --- TEST --- //
     SHIP_SURFACE = SDL_LoadBMP("./ship.bmp");
     LOGO_SURFACE = SDL_LoadBMP("./cacheblasters.bmp");
-    if(SHIP_SURFACE!=NULL) {
-      printf("LOADED SHIP IMAGE!\n");
-    } else {
-      printf("LOADING SHIP IMAGE FAILED!\n");
-    }
     SDL_ConvertSurface(SHIP_SURFACE,
 		       _engine->_screen->format,
 		       0);
-
+    SDL_ConvertSurface(LOGO_SURFACE,
+		       _engine->_screen->format,
+		       0);
     _engine->players.push_front(new Player(SDLK_LEFT,
 					   SDLK_RIGHT,
 					   SDLK_UP,
 					   SDLK_DOWN));
-    /*
-    for(int i = 0; i < 1000; i++) {
-      _engine->spaceObjects.push_front(new SpaceObject(0,
-						       0,
-						       ((rand()%100)-50)*0.001,
-						       ((rand()%100)-50)*0.001));
+    for(int i = 0; i < LOGO_SURFACE->w; i++){
+      for(int j = 0; j < LOGO_SURFACE->h; j++) {
+	int invj = (LOGO_SURFACE->h-1)-j;
+	int offset = i + (invj*LOGO_SURFACE->pitch/4);
+	SDL_Color pixelColor = ((SDL_Color*)LOGO_SURFACE->pixels)[offset];
+	if(pixelColor.r+pixelColor.g+pixelColor.b)
+	  new VolatilePixel(i-(LOGO_SURFACE->w/2),
+			    j-(LOGO_SURFACE->h/2),
+			    0,0,
+			    pixelColor.r,
+			    pixelColor.g,
+			    pixelColor.b);
+      }
     }
-    */
     // --- TEST --- //
     running = true;
   }
@@ -106,12 +108,12 @@ Uint32 PixelSpace::Tick() {
     case SDL_KEYDOWN:
       for(std::list<Player*>::const_iterator i = _engine->players.begin();
 	  i != _engine->players.end();
-	  ++i) (*i)->SetInput(event.key.keysym.sym, true);
+	  i++) (*i)->SetInput(event.key.keysym.sym, true);
       break;
     case SDL_KEYUP:
       for(std::list<Player*>::const_iterator i = _engine->players.begin();
 	  i != _engine->players.end();
-	  ++i) (*i)->SetInput(event.key.keysym.sym, false);
+	  i++) (*i)->SetInput(event.key.keysym.sym, false);
       if (event.key.keysym.sym == SDLK_ESCAPE) {
 	running = false;
 	return 0;
@@ -146,14 +148,16 @@ void PixelSpace::DrawPixel(double x, double y,
 void PixelSpace::DrawSurface(double x, double y, SDL_Surface* surface) {
   for(int i = 0; i < surface->w; i++) {
     for(int j = 0; j < surface->h; j++) {
-      int surfaceOffset=i+(j*surface->pitch/4);
+      int invj = (surface->h-1)-j;
+      int surfaceOffset=i+(invj*surface->pitch/4);
       SDL_Color color = ((SDL_Color*)surface->pixels)[surfaceOffset];
-      _engine->DrawPixel(x+i-(surface->w/2),
-			 y+j-(surface->h/2),
-			 color.r,
-			 color.g,
-			 color.b,
-			 0xff);
+      if(color.r+color.b+color.g)
+	_engine->DrawPixel(x+i-(surface->w/2),
+			   y+j-(surface->h/2),
+			   color.r,
+			   color.g,
+			   color.b,
+			   0xff);
     }
   }
 }
@@ -204,6 +208,7 @@ SpaceObject::SpaceObject(double x, double y, double xAccel, double yAccel) {
   this->xAccel = xAccel;
   this->yAccel = yAccel;
   this->ticks = 0;
+  PixelSpace::_engine->spaceObjects.push_front(this);
 }
 
 Uint32 SpaceObject::Tick() {
@@ -233,7 +238,20 @@ void VolatilePixel::Render() {
   PixelSpace::Engine()->DrawPixel(x,y,r,g,b,0xFF);
 }
 
-void VolatilePixel::Tick() {
+Uint32 VolatilePixel::Tick() {
   SpaceObject::Tick();
-  
+  if(xAccel+yAccel!=0) {
+    for(std::list<SpaceObject*>::const_iterator i = PixelSpace::Engine()->spaceObjects.begin();
+	i != PixelSpace::Engine()->spaceObjects.end();
+	i++) {
+      std::list<SpaceObject*>::const_iterator nexti = i;
+      nexti++;
+      if((((int)x)==((int)(*i)->x))&&(((int)y)==((int)(*i)->y))) {
+	if((*i)!=this) {
+	  PixelSpace::Engine()->spaceObjects.remove((*i));
+	  i = nexti;
+	}
+      }
+    }
+  }
 }

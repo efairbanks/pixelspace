@@ -17,8 +17,8 @@ public:
   Uint32 ticks;
   
   SpaceObject(double x, double y, double xAccel, double yAccel);
-  Uint32 Tick();
-  void Render();
+  virtual Uint32 Tick();
+  virtual void Render();
 };
 
 class VolatilePixel : public SpaceObject {
@@ -30,8 +30,8 @@ public:
   VolatilePixel(double x, double y,
 		double xAccel, double yAccel,
 		Uint8 r, Uint8 g, Uint8 b);
-  void Render();
-  void Tick();
+  virtual Uint32 Tick();
+  virtual void Render();
 };
 
 class Player {
