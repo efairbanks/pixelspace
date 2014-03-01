@@ -102,11 +102,20 @@ void PixelSpace::FillScreen(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
   for(int i = 0; i < _screen->w; i++)
     for(int j = 0; j < _screen->h; j++) {
       int offset = i + (j*_screen->pitch/4);
-      SDL_Color color = ((SDL_Color*)_screen->pixels)[offset];
-      color.r = (Uint8)(color.r*0.85);
-      color.g = (Uint8)(color.g*0.85);
+      SDL_Color color;
+      SDL_GetRGB(((Uint32*)_screen->pixels)[offset],
+		 _screen->format,
+		 &color.r,
+		 &color.g,
+		 &color.b);
+      color.r = (Uint8)(color.r*0.85*16/25);
+      color.g = (Uint8)(color.g*0.85*4/5);
       color.b = (Uint8)(color.b*0.85);
-      ((SDL_Color*)_screen->pixels)[offset] = color;
+      ((Uint32*)_screen->pixels)[offset] = 
+	SDL_MapRGB(_screen->format,
+		   color.r,
+		   color.g,
+		   color.b);
     }
 }
 
