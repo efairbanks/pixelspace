@@ -36,16 +36,14 @@ public:
 
 class Player {
 public:
-  Player(SDLKey rotateLeft,
-	 SDLKey rotateRight,
-	 SDLKey boost,
+  Player(SDLKey moveLeft,
+	 SDLKey moveRight,
 	 SDLKey fire);
   Uint32 Tick();
   void SetInput(SDLKey key, bool keyDown);
   // -- //
-  SDLKey rotateLeft;
-  SDLKey rotateRight;
-  SDLKey boost;
+  SDLKey moveLeft;
+  SDLKey moveRight;
   SDLKey fire;
   // -- //
   double angle;

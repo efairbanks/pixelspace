@@ -11,29 +11,29 @@ SDL_Surface* SHIP_SURFACE;
 SDL_Surface* LOGO_SURFACE;
 // ------------ //
 
-Player::Player(SDLKey rotateLeft,
-	       SDLKey rotateRight,
-	       SDLKey boost,
+Player::Player(SDLKey moveLeft,
+	       SDLKey moveRight,
 	       SDLKey fire) {
-  this->rotateLeft = rotateLeft;
-  this->rotateRight = rotateRight;
-  this->boost = boost;
+  this->moveLeft = moveLeft;
+  this->moveRight = moveRight;
   this->fire = fire;
-  this->angle = 0;
   this->magnitude = 0;
   this->ship = new SpaceObject(0,0.0-(PixelSpace::Engine()->_screenHeight/3.0),0,0);
 }
 
 Uint32 Player::Tick() {
-  ship->xAccel += cos(angle*2*M_PI)*magnitude;
-  ship->yAccel += sin(angle*2*M_PI)*magnitude;
+  ship->x += magnitude;
 }
 
 void Player::SetInput(SDLKey key, bool keyDown) {
-  if(key==rotateLeft && keyDown)  angle -= M_PI*2.0/8;
-  if(key==rotateRight && keyDown) angle += M_PI*2.0/8;
-  if(key==boost && keyDown) magnitude = 0.0001;
-  if(key==boost && !keyDown) magnitude = 0;
+  if(key==moveLeft && keyDown) magnitude = -0.1;
+  if(key==moveRight && keyDown) magnitude = 0.1;
+  if((key==moveRight || key==moveLeft) && !keyDown)
+    magnitude = 0;
+  if(key==fire && keyDown)
+    new VolatilePixel(ship->x,ship->y+1,
+		      magnitude,0.5,
+		      0xff,0xff,0xff);
 }
 
 PixelSpace* PixelSpace::Engine() {
@@ -63,6 +63,7 @@ PixelSpace* PixelSpace::Engine(unsigned int screenWidth,
     // --- TEST --- //
     SHIP_SURFACE = SDL_LoadBMP("./ship.bmp");
     LOGO_SURFACE = SDL_LoadBMP("./cacheblasters.bmp");
+    LOGO_SURFACE = SHIP_SURFACE;
     SDL_ConvertSurface(SHIP_SURFACE,
 		       _engine->_screen->format,
 		       0);
@@ -71,8 +72,7 @@ PixelSpace* PixelSpace::Engine(unsigned int screenWidth,
 		       0);
     _engine->players.push_front(new Player(SDLK_LEFT,
 					   SDLK_RIGHT,
-					   SDLK_UP,
-					   SDLK_DOWN));
+					   SDLK_UP));
     for(int i = 0; i < LOGO_SURFACE->w; i++){
       for(int j = 0; j < LOGO_SURFACE->h; j++) {
 	int invj = (LOGO_SURFACE->h-1)-j;
@@ -98,7 +98,16 @@ bool PixelSpace::ShutDown() {
 }
 
 void PixelSpace::FillScreen(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-  SDL_FillRect(_screen, NULL, SDL_MapRGBA(_screen->format,r,g,b,a));
+  //SDL_FillRect(_screen, NULL, SDL_MapRGBA(_screen->format,r,g,b,a));
+  for(int i = 0; i < _screen->w; i++)
+    for(int j = 0; j < _screen->h; j++) {
+      int offset = i + (j*_screen->pitch/4);
+      SDL_Color color = ((SDL_Color*)_screen->pixels)[offset];
+      color.r = (Uint8)(color.r*0.85);
+      color.g = (Uint8)(color.g*0.85);
+      color.b = (Uint8)(color.b*0.85);
+      ((SDL_Color*)_screen->pixels)[offset] = color;
+    }
 }
 
 Uint32 PixelSpace::Tick() {
@@ -127,7 +136,18 @@ Uint32 PixelSpace::Tick() {
       ++i) (*i)->Tick();
   for(std::list<SpaceObject*>::const_iterator i = _engine->spaceObjects.begin();
       i != _engine->spaceObjects.end();
-      ++i) (*i)->Tick();
+      ++i) {
+    std::list<SpaceObject*>::const_iterator nexti = i;
+    nexti++;
+    if(abs((*i)->x) >= _engine->_screenWidth ||
+       abs((*i)->y) >= _engine->_screenHeight) {
+      delete (*i);
+      _engine->spaceObjects.remove((*i));
+      i = nexti;
+    }
+
+    (*i)->Tick();
+  }
   // --- //
   this->ticks++;
   return this->ticks;
@@ -239,7 +259,7 @@ void VolatilePixel::Render() {
 }
 
 Uint32 VolatilePixel::Tick() {
-  SpaceObject::Tick();
+  Uint32 tick = SpaceObject::Tick();
   if(xAccel+yAccel!=0) {
     for(std::list<SpaceObject*>::const_iterator i = PixelSpace::Engine()->spaceObjects.begin();
 	i != PixelSpace::Engine()->spaceObjects.end();
@@ -248,10 +268,12 @@ Uint32 VolatilePixel::Tick() {
       nexti++;
       if((((int)x)==((int)(*i)->x))&&(((int)y)==((int)(*i)->y))) {
 	if((*i)!=this) {
+	  delete (*i);
 	  PixelSpace::Engine()->spaceObjects.remove((*i));
 	  i = nexti;
 	}
       }
     }
   }
+  return tick;
 }
