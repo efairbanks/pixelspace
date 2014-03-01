@@ -46,7 +46,6 @@ public:
   SDLKey moveRight;
   SDLKey fire;
   // -- //
-  double angle;
   double magnitude;
   // -- //
   SpaceObject* ship;
@@ -56,6 +55,7 @@ class PixelSpace {
 public:
   static bool running;
   static Uint32 ticks;
+  Uint32 numSpaceObjects;
   std::list<SpaceObject*> spaceObjects;
   std::list<Player*> players;
   // --- //

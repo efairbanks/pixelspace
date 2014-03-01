@@ -18,7 +18,7 @@ Player::Player(SDLKey moveLeft,
   this->moveRight = moveRight;
   this->fire = fire;
   this->magnitude = 0;
-  this->ship = new SpaceObject(0,0.0-(PixelSpace::Engine()->_screenHeight/3.0),0,0);
+  this->ship = new SpaceObject(0,0.0-(PixelSpace::Engine()->_screenHeight/13.0),0,0);
 }
 
 Uint32 Player::Tick() {
@@ -63,7 +63,6 @@ PixelSpace* PixelSpace::Engine(unsigned int screenWidth,
     // --- TEST --- //
     SHIP_SURFACE = SDL_LoadBMP("./ship.bmp");
     LOGO_SURFACE = SDL_LoadBMP("./cacheblasters.bmp");
-    LOGO_SURFACE = SHIP_SURFACE;
     SDL_ConvertSurface(SHIP_SURFACE,
 		       _engine->_screen->format,
 		       0);
@@ -162,15 +161,33 @@ Uint32 PixelSpace::Tick() {
   return this->ticks;
 }
 
-void PixelSpace::DrawPixel(double x, double y,
-			   Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-    unsigned int ix =(int)x + (_screenWidth/2);
-    unsigned int iy =(int)y + (_screenHeight/2);
-    if(ix>=0 && iy>=0 && ix<_screenWidth && iy<_screenHeight){
-      unsigned int offset = ix;
+void drawPixel(double x, double y,
+	       Uint8 r, Uint8 g, Uint8 b, Uint8 a,
+	       unsigned int _screenWidth,
+	       unsigned int _screenHeight,
+	       SDL_Surface* _screen) {
+  unsigned int ix =(int)x + (_screenWidth/2);
+  unsigned int iy =(int)y + (_screenHeight/2);
+  if(ix>=0 && iy>=0 && ix<_screenWidth && iy<_screenHeight){
+    unsigned int offset = ix;
       offset += ((_screenHeight-1)-iy)*(_screen->pitch/4);
       ((unsigned int*)_screen->pixels)[offset] = SDL_MapRGBA(_screen->format,
 							     r,g,b,a);
+    }
+}
+
+void PixelSpace::DrawPixel(double x, double y,
+			   Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
+  int pixelSize = 5;
+  x = x * pixelSize;
+  y = y * pixelSize;
+  for(int i = 0; i < pixelSize; i++)
+    for(int j = 0; j < pixelSize; j++) {
+      drawPixel(x+i-(pixelSize/2),
+		y+j-(pixelSize/2),
+		r,g,b,a,
+		_screenWidth,_screenHeight,
+		_screen);
     }
 }
 
